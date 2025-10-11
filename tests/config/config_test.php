@@ -13,9 +13,44 @@ use Knp\DoctrineBehaviors\Tests\Utils\Doctrine\DebugStack;
 use Psr\Log\Test\TestLogger;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\HttpKernel\Kernel;
 use function Symfony\Component\DependencyInjection\Loader\Configurator\service;
 
 return static function (ContainerConfigurator $containerConfigurator): void {
+    $containerConfigurator->extension('framework', [
+        'http_method_override' => false,
+        'handle_all_throwables' => true,
+        'php_errors' => [
+            'log' => true,
+        ],
+    ]);
+
+    if (Kernel::VERSION_ID >= 70300) { // @phpstan-ignore greaterOrEqual.alwaysFalse
+        $containerConfigurator->extension('framework', [
+            'property_info' => [
+                'with_constructor_extractor' => true,
+            ],
+        ]);
+    }
+
+    $containerConfigurator->extension('doctrine', [
+        'orm' => [
+            'enable_lazy_ghost_objects' => true,
+            'controller_resolver' => [
+                'auto_mapping' => false,
+            ],
+        ],
+    ]);
+
+    if (PHP_VERSION_ID >= 80400) {
+        $containerConfigurator->extension('doctrine', [
+            'orm' => [
+                'enable_lazy_ghost_objects' => true,
+                'enable_native_lazy_objects' => true,
+            ],
+        ]);
+    }
+
     $parameters = $containerConfigurator->parameters();
 
     $parameters->set('env(DB_ENGINE)', 'pdo_sqlite');
