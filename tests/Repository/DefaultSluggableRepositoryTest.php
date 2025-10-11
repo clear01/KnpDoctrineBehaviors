@@ -63,14 +63,32 @@ final class DefaultSluggableRepositoryTest extends TestCase
             ->with($entityClass, 'e')
             ->willReturnSelf();
 
-        $queryBuilder->expects(self::exactly(2))
+        $invokedCount = $this->exactly(2);
+        $queryBuilder->expects($invokedCount)
             ->method('andWhere')
-            ->withConsecutive(['e.slug = :slug'], ['e.id.id != :id_id'])
+            ->willReturnCallback(function ($parameters) use ($invokedCount) {
+                if ($invokedCount->numberOfInvocations() === 1) {
+                    $this->assertSame(['e.slug = :slug'], $parameters);
+                }
+
+                if ($invokedCount->numberOfInvocations() === 2) {
+                    $this->assertSame(['e.id.id != :id_id'], $parameters);
+                }
+            })
             ->willReturnSelf();
 
-        $queryBuilder->expects(self::exactly(2))
+        $invokedCount = $this->exactly(2);
+        $queryBuilder->expects($invokedCount)
             ->method('setParameter')
-            ->withConsecutive(['slug', $uniqueSlug], ['id_id', '123'])
+            ->willReturnCallback(function ($parameters) use ($invokedCount, $uniqueSlug) {
+                if ($invokedCount->numberOfInvocations() === 1) {
+                    $this->assertSame(['slug', $uniqueSlug], $parameters);
+                }
+
+                if ($invokedCount->numberOfInvocations() === 2) {
+                    $this->assertSame(['id_id', '123'], $parameters);
+                }
+            })
             ->willReturnSelf();
 
         $queryBuilder->expects(self::once())
