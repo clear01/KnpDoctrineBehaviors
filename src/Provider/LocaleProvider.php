@@ -33,13 +33,17 @@ final class LocaleProvider implements LocaleProviderInterface
             return $currentLocale;
         }
 
-        return $this->translator?->getLocale();
+        if ($this->translator !== null) {
+            return $this->translator->getLocale();
+        }
+
+        return null;
     }
 
     public function provideFallbackLocale(): ?string
     {
         $currentRequest = $this->requestStack->getCurrentRequest();
-        if ($currentRequest instanceof Request) {
+        if ($currentRequest !== null) {
             return $currentRequest->getDefaultLocale();
         }
 

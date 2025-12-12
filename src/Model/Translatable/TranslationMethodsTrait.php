@@ -48,7 +48,7 @@ trait TranslationMethodsTrait
                 continue;
             }
 
-            if (is_string($value) && trim($value) !== '') {
+            if (is_string($value) && strlen(trim($value)) > 0) {
                 return false;
             }
 

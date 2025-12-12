@@ -4,19 +4,16 @@ declare(strict_types=1);
 
 namespace Knp\DoctrineBehaviors\EventSubscriber;
 
-use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
+use Doctrine\Bundle\DoctrineBundle\EventSubscriber\EventSubscriberInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Event\LifecycleEventArgs;
 use Doctrine\ORM\Event\LoadClassMetadataEventArgs;
 use Doctrine\ORM\Events;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\Persistence\Event\LifecycleEventArgs;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Knp\DoctrineBehaviors\Contract\Entity\SluggableInterface;
 use Knp\DoctrineBehaviors\Repository\DefaultSluggableRepository;
 
-#[AsDoctrineListener(event: Events::loadClassMetadata)]
-#[AsDoctrineListener(event: Events::prePersist)]
-#[AsDoctrineListener(event: Events::preUpdate)]
-final class SluggableEventSubscriber
+final class SluggableEventSubscriber implements EventSubscriberInterface
 {
     /**
      * @var string
@@ -53,18 +50,26 @@ final class SluggableEventSubscriber
         $this->processLifecycleEventArgs($lifecycleEventArgs);
     }
 
-    private function shouldSkip(ClassMetadata $classMetadata): bool
+    /**
+     * @return string[]
+     */
+    public function getSubscribedEvents(): array
     {
-        if (! is_a($classMetadata->getName(), SluggableInterface::class, true)) {
+        return [Events::loadClassMetadata, Events::prePersist, Events::preUpdate];
+    }
+
+    private function shouldSkip(ClassMetadataInfo $classMetadataInfo): bool
+    {
+        if (! is_a($classMetadataInfo->getName(), SluggableInterface::class, true)) {
             return true;
         }
 
-        return $classMetadata->hasField(self::SLUG);
+        return $classMetadataInfo->hasField(self::SLUG);
     }
 
     private function processLifecycleEventArgs(LifecycleEventArgs $lifecycleEventArgs): void
     {
-        $entity = $lifecycleEventArgs->getObject();
+        $entity = $lifecycleEventArgs->getEntity();
         if (! $entity instanceof SluggableInterface) {
             return;
         }
